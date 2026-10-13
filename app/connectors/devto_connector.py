@@ -12,7 +12,7 @@ HEADERS = {
 }
 
 
-def post_to_devto(title, body_markdown, tags=None, published=False):
+def post_to_devto(title, body_markdown, tags=None, published=False, main_image=None):
     """
     Post an article to dev.to API.
 
@@ -21,6 +21,7 @@ def post_to_devto(title, body_markdown, tags=None, published=False):
         body_markdown (str): Article body in Markdown format
         tags (list): List of tags (max 4)
         published (bool): If True, publish immediately; if False, create as draft
+        main_image (str): Optional cover image URL for the article
 
     Returns:
         dict: Response JSON from dev.to API (includes article URL)
@@ -38,6 +39,11 @@ def post_to_devto(title, body_markdown, tags=None, published=False):
 
     if tags:
         payload["article"]["tags"] = tags
+
+    # Only include a cover image if we actually found one
+    if main_image:
+        payload["article"]["cover_image"] = main_image
+        payload["article"]["main_image"] = main_image
 
     response = requests.post(API_URL, json=payload, headers=HEADERS)
 
