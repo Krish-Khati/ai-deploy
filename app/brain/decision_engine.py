@@ -103,22 +103,33 @@ if __name__ == "__main__":
             print(post["body"].encode('ascii', 'replace').decode())
             print("=" * 60)
 
-            # Post to dev.to as draft
-            print("\nPosting to dev.to as draft...")
-            try:
-                result = post_to_devto(
-                    title=post['title'],
-                    body_markdown=post['body'],
-                    tags=['github', 'ai', 'automation'],
-                    published=False
-                )
-                if result:
-                    print(f"Success! Draft created: {result.get('url')}")
-                else:
-                    print("Failed to post to dev.to (check DEVTO_API_KEY)")
-            except Exception as e:
-                print(f"Error posting to dev.to: {e}")
-                print("(Blog post content shown above)")
+            # Safety check: only publish if the AI output is substantial enough.
+            # A short/empty title or body usually means the LLM returned broken output.
+            MIN_BODY_LENGTH = 50
+            title = (post['title'] or "").strip()
+            body = (post['body'] or "").strip()
+
+            if not title or len(body) < MIN_BODY_LENGTH:
+                print("\nSkipping dev.to post: content didn't meet the minimum quality bar")
+                print(f"  - Title must be non-empty (got {len(title)} chars)")
+                print(f"  - Body must be at least {MIN_BODY_LENGTH} chars (got {len(body)})")
+            else:
+                # Post to dev.to and publish immediately
+                print("\nPosting to dev.to (publishing immediately)...")
+                try:
+                    result = post_to_devto(
+                        title=title,
+                        body_markdown=body,
+                        tags=['github', 'ai', 'automation'],
+                        published=True
+                    )
+                    if result:
+                        print(f"Success! Published: {result.get('url')}")
+                    else:
+                        print("Failed to post to dev.to (check DEVTO_API_KEY)")
+                except Exception as e:
+                    print(f"Error posting to dev.to: {e}")
+                    print("(Blog post content shown above)")
         else:
             print("Failed to generate blog post.")
     else:
