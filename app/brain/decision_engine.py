@@ -282,18 +282,19 @@ if __name__ == "__main__":
                 else:
                     print("  No cover image found - posting without one.")
 
-                # Post to dev.to and publish immediately
-                print("\nPosting to dev.to (publishing immediately)...")
+                # Create as a draft so a human reviews it before it goes live
+                print("\nCreating draft on dev.to (manual review required)...")
                 try:
                     result = post_to_devto(
                         title=title,
                         body_markdown=body,
                         tags=['github', 'ai', 'automation'],
-                        published=True,
+                        published=False,
                         main_image=cover_image
                     )
                     if result:
-                        print(f"Success! Published: {result.get('url')}")
+                        print(f"Draft created: {result.get('url')}")
+                        print("Review it on dev.to, then publish when ready.")
                     else:
                         print("Failed to post to dev.to (check DEVTO_API_KEY)")
                 except Exception as e:
