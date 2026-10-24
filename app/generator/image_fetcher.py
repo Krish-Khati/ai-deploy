@@ -86,6 +86,9 @@ def _pixabay_candidates(query):
             timeout=TIMEOUT,
         )
         if response.status_code != 200:
+            # A 400 here is almost always an invalid or expired key. Without
+            # this line that looks identical to "no images matched".
+            print(f"  Pixabay returned {response.status_code} (check PIXABAY_API_KEY), falling back to Openverse")
             return []
 
         hits = response.json().get("hits", [])
@@ -109,7 +112,17 @@ def _openverse_candidates(query):
 
         results = response.json().get("results", [])
         ranked = _pick_best(query, results, ["title", "tags"])
-        return [item.get("url") for item in ranked]
+        # Openverse's `url` usually points at the original host, which either
+        # blocks hotlinks (Flickr answers 403) or has since removed the file
+        # (Wikimedia answers 404). `thumbnail` is served by Openverse itself,
+        # so it is the one that actually loads. Prefer the original for
+        # resolution, then fall back.
+        return [
+            item[field]
+            for item in ranked
+            for field in ("url", "thumbnail")
+            if item.get(field)
+        ]
     except (requests.RequestException, ValueError):
         return []
 

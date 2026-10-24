@@ -216,7 +216,8 @@ BODY: <the markdown body>
         return None
 
 
-if __name__ == "__main__":
+def run():
+    """Run the full pipeline: GitHub activity -> Groq post -> dev.to draft."""
     # Import get_latest_activity from github_watcher
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -305,3 +306,7 @@ if __name__ == "__main__":
     else:
         print("No commit found for this repository.")
         print("Try a different repo or check if the repo exists.")
+
+
+if __name__ == "__main__":
+    run()

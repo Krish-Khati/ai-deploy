@@ -1,4 +1,4 @@
-requests
-python-dotenv
-pytrends
-groq
+requests==2.34.2
+python-dotenv==1.2.4
+pytrends==4.9.2
+groq==1.7.0
