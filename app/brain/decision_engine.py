@@ -109,7 +109,7 @@ def _console_safe(text, limit=500):
     return text[:limit].encode("ascii", "replace").decode()
 
 
-def generate_blog_post(commit_message, commit_date, repo_name):
+def generate_blog_post(commit_message, commit_date, repo_name, theme=None):
     """
     Generate a dev.to blog post from a GitHub commit using Groq LLM.
 
@@ -117,6 +117,8 @@ def generate_blog_post(commit_message, commit_date, repo_name):
         commit_message (str): The commit message
         commit_date (str): The commit date (ISO format)
         repo_name (str): Repository name (owner/repo)
+        theme (str): Today's occasion from the festival calendar. When set, the
+            post is about the occasion and the commit is only background.
 
     Returns:
         dict: {"title": str, "body": str} or None if error
@@ -125,6 +127,17 @@ def generate_blog_post(commit_message, commit_date, repo_name):
         print("Error: GROQ_API_KEY not found in .env file")
         return None
 
+    # On a festival or other special day the occasion leads, otherwise a commit
+    # recap would be posted on Diwali. The commit stays available as background.
+    occasion = ""
+    if theme:
+        occasion = f"""
+Today's occasion (this is the subject of the post):
+- {theme}
+- Write about this occasion, not about the commit. The commit above is background only; mention it only if it genuinely fits.
+- Warm wishes and a general, honest reflection are enough. Do not invent a personal story about the festival, and do not force a technology angle onto a cultural occasion.
+"""
+
     prompt = f"""
 Write a short personal blog post for dev.to (200-300 words).
 
@@ -132,7 +145,7 @@ Real, checkable context:
 - Repo: {repo_name}
 - Latest commit: {commit_message}
 - Commit date: {commit_date}
-
+{occasion}
 Voice and perspective:
 - Write as Krish, an indie developer based in India who builds software and AI tools and writes publicly about the process.
 - Strictly first person. Use "I". This is honest reflection, not a tutorial.
@@ -221,9 +234,13 @@ def run():
     # Import get_latest_activity from github_watcher
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+    from app.brain.calendar_events import get_todays_theme
     from app.brain.github_watcher import get_latest_activity
     from app.connectors.devto_connector import post_to_devto
     from app.generator.image_fetcher import get_relevant_image
+
+    theme = get_todays_theme()
+    print(f"Special day detected: {theme}" if theme else "Normal day, using GitHub activity")
 
     print("Fetching GitHub activity...")
     activity = get_latest_activity("Krish-Khati/ai-deploy")
@@ -235,7 +252,8 @@ def run():
         post = generate_blog_post(
             commit_message=activity["latest_commit_message"],
             commit_date=activity["latest_commit_date"],
-            repo_name="Krish-Khati/ai-deploy"
+            repo_name="Krish-Khati/ai-deploy",
+            theme=theme
         )
 
         if post:
