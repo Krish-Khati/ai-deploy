@@ -138,24 +138,36 @@ Today's occasion (this is the subject of the post):
 - Warm wishes and a general, honest reflection are enough. Do not invent a personal story about the festival, and do not force a technology angle onto a cultural occasion.
 """
 
-    prompt = f"""
-Write a short personal blog post for dev.to (200-300 words).
-
-Real, checkable context:
+    # A festival post can run on a day with no new commit, so the commit lines and
+    # the rules about referring to one only appear when a commit actually exists.
+    if commit_message:
+        context = f"""Real, checkable context:
 - Repo: {repo_name}
 - Latest commit: {commit_message}
 - Commit date: {commit_date}
-{occasion}
+"""
+        commit_rules = """- The commit is a starting point, not the subject. Write about what it prompted you to think about.
+- Referring to the commit plainly is fine and encouraged, e.g. "I made a small fix to the setup docs today." That part is actually true. Keep it boring and accurate.
+"""
+    else:
+        context = """Real, checkable context:
+- There is no new commit today. Do not mention a commit, a repository, a deploy, or anything you shipped.
+"""
+        commit_rules = ""
+
+    prompt = f"""
+Write a short personal blog post for dev.to (200-300 words).
+
+{context}{occasion}
 Voice and perspective:
 - Write as Krish, an indie developer based in India who builds software and AI tools and writes publicly about the process.
 - Strictly first person. Use "I". This is honest reflection, not a tutorial.
-- The commit is a starting point, not the subject. Write about what it prompted you to think about.
-
+{commit_rules}
 TRUTHFULNESS - this matters more than style:
 - Do NOT invent incidents. No fabricated late nights, specific times, scenes, arguments, dialogue, people, or "I remember when..." stories.
-- Do NOT claim a specific bug, outage, or client interaction unless it is stated in the commit message above.
+- Do NOT invent personal circumstances either: where you are, what your desk or room looks like, what you did last night, or what you will do next week.
+- Do NOT claim a specific bug, outage, or client interaction unless it is stated in the context above.
 - Write general, honest reflection about software development, AI tools, and content creation - the kind of thing a working developer would genuinely think. Real perspective, not a dramatised narrative.
-- Referring to the commit plainly is fine and encouraged, e.g. "I made a small fix to the setup docs today." That part is actually true. Keep it boring and accurate.
 - If you want to describe a struggle, describe it as a general pattern you deal with, not a specific story you are making up.
 - When in doubt, write something dull and true rather than something vivid and invented.
 
@@ -244,13 +256,19 @@ def run():
 
     print("Fetching GitHub activity...")
     activity = get_latest_activity("Krish-Khati/ai-deploy")
+    commit_message = activity["latest_commit_message"]
 
-    if activity["latest_commit_message"]:
-        print(f"Found commit: {activity['latest_commit_message'][:60]}...")
+    # A festival post needs no commit. On a normal day the commit is the only
+    # source of material, so no commit still means no post.
+    if theme or commit_message:
+        if commit_message:
+            print(f"Found commit: {commit_message[:60]}...")
+        else:
+            print("No new commit today, writing from the occasion alone.")
         print("Generating blog post...\n")
 
         post = generate_blog_post(
-            commit_message=activity["latest_commit_message"],
+            commit_message=commit_message,
             commit_date=activity["latest_commit_date"],
             repo_name="Krish-Khati/ai-deploy",
             theme=theme
